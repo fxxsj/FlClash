@@ -150,20 +150,36 @@ class Build {
     final environment = Platform.environment;
     if (buildItem.target == Target.android) {
       final ndk = environment["ANDROID_NDK"];
-      assert(ndk != null);
-      final prebuiltDir =
-          Directory(join(ndk!, "toolchains", "llvm", "prebuilt"));
+      if (ndk == null || ndk.isEmpty) {
+        throw "ANDROID_NDK environment variable is not set. Please set it to the Android NDK path.";
+      }
+      
+      final prebuiltDir = Directory(join(ndk, "toolchains", "llvm", "prebuilt"));
+      if (!prebuiltDir.existsSync()) {
+        throw "Android NDK prebuilt directory not found at: ${prebuiltDir.path}";
+      }
+      
       final prebuiltDirList = prebuiltDir.listSync();
+      if (prebuiltDirList.isEmpty) {
+        throw "No prebuilt directories found in: ${prebuiltDir.path}";
+      }
+      
       final map = {
         "armeabi-v7a": "armv7a-linux-androideabi21-clang",
         "arm64-v8a": "aarch64-linux-android21-clang",
         "x86": "i686-linux-android21-clang",
         "x86_64": "x86_64-linux-android21-clang"
       };
+      
+      final compilerName = map[buildItem.archName];
+      if (compilerName == null) {
+        throw "Unsupported Android architecture: ${buildItem.archName}";
+      }
+      
       return join(
         prebuiltDirList.first.path,
         "bin",
-        map[buildItem.archName],
+        compilerName,
       );
     }
     return "gcc";
