@@ -420,6 +420,12 @@ enum PageLabel {
   requests,
   resources,
   connections,
+  userCenter,
+  purchase,
+  myCenter,
+  myOrders,
+  inviteFriends,
+  customerSupport,
 }
 
 enum RuleAction {
@@ -503,4 +509,10 @@ enum Language {
 enum ImportOption {
   file,
   url,
+}
+
+// 用户中心页面的可用组件
+enum UserCenterWidgetType {
+  noticeList,
+  connectionStatus,  // 新增连接状态组件
 }

@@ -48,7 +48,7 @@ class AboutView extends StatelessWidget {
           },
         ),
         ListItem(
-          title: const Text("Telegram"),
+          title: Text(appLocalizations.telegram),
           onTap: () {
             globalState.openUrl(
               "https://t.me/FlClash",

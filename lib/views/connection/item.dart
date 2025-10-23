@@ -149,17 +149,17 @@ class ConnectionItem extends ConsumerWidget {
         minWidth: 160,
         items: [
           PopupMenuItemData(
-            label: "编辑规则",
+            label: appLocalizations.editRules,
             onPressed: () {
               // _handleShowEditExtendPage(context);
             },
           ),
           PopupMenuItemData(
-            label: "设置直连",
+            label: appLocalizations.setDirectConnection,
             onPressed: () {},
           ),
           PopupMenuItemData(
-            label: "一键屏蔽",
+            label: appLocalizations.oneClickBlock,
             onPressed: () {},
           ),
         ],

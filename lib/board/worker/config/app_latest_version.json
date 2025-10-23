@@ -1,0 +1,62 @@
+{
+    "tag_name": "v0.8.75",
+    "name": "FlClash v0.8.75",
+    "body": "## 更新内容\n- 新版本发布\n- 本次更新需要卸载后重装",
+    "assets": [
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-android-arm64-v8a.apk",
+        "name": "FlClash-0.8.75-android-arm64-v8a.apk",
+        "label": "Android arm64-v8a",
+        "content_type": "application/vnd.android.package-archive"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-android-armeabi-v7a.apk",
+        "name": "FlClash-0.8.75-android-armeabi-v7a.apk",
+        "label": "Android armeabi-v7a",
+        "content_type": "application/vnd.android.package-archive"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-android-x86_64.apk",
+        "name": "FlClash-0.8.75-android-x86_64.apk",
+        "label": "Android x86_64",
+        "content_type": "application/vnd.android.package-archive"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-linux-amd64.AppImage",
+        "name": "FlClash-0.8.75-linux-amd64.AppImage",
+        "label": "Linux AppImage",
+        "content_type": "application/x-executable"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-linux-amd64.deb",
+        "name": "FlClash-0.8.75-linux-amd64.deb",
+        "label": "Linux DEB",
+        "content_type": "application/vnd.debian.binary-package"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-macos-amd64.dmg",
+        "name": "FlClash-0.8.75-macos-amd64.dmg",
+        "label": "macOS Intel",
+        "content_type": "application/x-apple-diskimage"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-macos-arm64.dmg",
+        "name": "FlClash-0.8.75-macos-arm64.dmg",
+        "label": "macOS Apple Silicon",
+        "content_type": "application/x-apple-diskimage"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-windows-amd64-setup.exe",
+        "name": "FlClash-0.8.75-windows-amd64-setup.exe",
+        "label": "Windows Setup",
+        "content_type": "application/x-msdownload"
+      },
+      {
+        "browser_download_url": "https://cloud.ziu.ooo/FxClash/v0.8.75/FlClash-0.8.75-windows-amd64.zip",
+        "name": "FlClash-0.8.75-windows-amd64.zip",
+        "label": "Windows Portable",
+        "content_type": "application/zip"
+      }
+    ]
+  }
+  

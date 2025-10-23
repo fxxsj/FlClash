@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/l10n/l10n.dart';
 import 'package:fl_clash/models/models.dart';
@@ -10,6 +11,12 @@ import 'package:fl_clash/views/access.dart';
 import 'package:fl_clash/views/application_setting.dart';
 import 'package:fl_clash/views/config/config.dart';
 import 'package:fl_clash/views/hotkey.dart';
+import 'package:fl_clash/views/connection/connections.dart';
+import 'package:fl_clash/views/connection/requests.dart';
+import 'package:fl_clash/views/profiles/profiles.dart';
+import 'package:fl_clash/views/profiles/add_profile.dart';
+import 'package:fl_clash/views/profiles/scripts.dart';
+import 'package:fl_clash/views/proxies/proxies.dart';
 import 'package:fl_clash/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,6 +64,20 @@ class _ToolboxViewState extends ConsumerState<ToolsView> {
     );
   }
 
+  Widget _getConnectionToolsList() {
+    return Column(
+      children: generateSection(
+        title: appLocalizations.connectionTools,
+        items: [
+          _ProxiesItem(),
+          _ProfilesItem(),
+          _ConnectionsItem(),
+          _RequestsItem(),
+        ],
+      ),
+    );
+  }
+
   List<Widget> _getOtherList(bool enableDeveloperMode) {
     return generateSection(
       title: appLocalizations.other,
@@ -95,17 +116,23 @@ class _ToolboxViewState extends ConsumerState<ToolsView> {
       Consumer(
         builder: (_, ref, __) {
           final state = ref.watch(moreToolsSelectorStateProvider);
-          if (state.navigationItems.isEmpty) {
+          final otherItems = state.navigationItems.where((item) => 
+            item.label != PageLabel.connections && 
+            item.label != PageLabel.requests &&
+            item.label != PageLabel.profiles
+          ).toList();
+          if (otherItems.isEmpty) {
             return Container();
           }
           return Column(
             children: [
               ListHeader(title: appLocalizations.more),
-              _buildNavigationMenu(state.navigationItems)
+              _buildNavigationMenu(otherItems)
             ],
           );
         },
       ),
+      _getConnectionToolsList(),
       ..._getSettingList(),
       ..._getOtherList(vm2.b),
     ];
@@ -306,6 +333,247 @@ class _InfoItem extends StatelessWidget {
   }
 }
 
+class _ProxiesToolWrapper extends ConsumerStatefulWidget {
+  const _ProxiesToolWrapper();
+
+  @override
+  ConsumerState<_ProxiesToolWrapper> createState() => _ProxiesToolWrapperState();
+}
+
+class _ProxiesToolWrapperState extends ConsumerState<_ProxiesToolWrapper> with PageMixin {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initPageState();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const ProxiesView();
+  }
+}
+
+class _ProfilesToolWrapper extends ConsumerStatefulWidget {
+  const _ProfilesToolWrapper();
+
+  @override
+  ConsumerState<_ProfilesToolWrapper> createState() => _ProfilesToolWrapperState();
+}
+
+class _ProfilesToolWrapperState extends ConsumerState<_ProfilesToolWrapper> with PageMixin {
+  
+  _handleShowAddExtendPage() {
+    showExtend(
+      context,
+      builder: (_, type) {
+        return AdaptiveSheetScaffold(
+          type: type,
+          body: AddProfileView(
+            context: context,
+          ),
+          title: "${appLocalizations.add}${appLocalizations.profile}",
+        );
+      },
+    );
+  }
+
+  _updateProfiles() async {
+    final profiles = globalState.config.profiles;
+    final messages = [];
+    final updateProfiles = profiles.map<Future>(
+      (profile) async {
+        if (profile.type == ProfileType.file) return;
+        globalState.appController.setProfile(
+          profile.copyWith(isUpdating: true),
+        );
+        try {
+          await globalState.appController.updateProfile(profile);
+        } catch (e) {
+          messages.add("${profile.label ?? profile.id}: $e \n");
+          globalState.appController.setProfile(
+            profile.copyWith(
+              isUpdating: false,
+            ),
+          );
+        }
+      },
+    );
+    final titleMedium = context.textTheme.titleMedium;
+    await Future.wait(updateProfiles);
+    if (messages.isNotEmpty) {
+      globalState.showMessage(
+        title: appLocalizations.tip,
+        message: TextSpan(
+          children: [
+            for (final message in messages)
+              TextSpan(text: message, style: titleMedium)
+          ],
+        ),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      initPageState();
+    });
+  }
+
+  @override
+  List<Widget> get actions => [
+        IconButton(
+          onPressed: () {
+            _updateProfiles();
+          },
+          icon: const Icon(Icons.sync),
+        ),
+        IconButton(
+          onPressed: () {
+            showExtend(
+              context,
+              builder: (_, type) {
+                return ScriptsView();
+              },
+            );
+          },
+          icon: Consumer(
+            builder: (context, ref, __) {
+              final isScriptMode = ref.watch(
+                  scriptStateProvider.select((state) => state.realId != null));
+              return Icon(
+                Icons.functions,
+                color: isScriptMode ? context.colorScheme.primary : null,
+              );
+            },
+          ),
+        ),
+        IconButton(
+          onPressed: () {
+            final profiles = globalState.config.profiles;
+            showSheet(
+              context: context,
+              builder: (_, type) {
+                return ReorderableProfilesSheet(
+                  type: type,
+                  profiles: profiles,
+                );
+              },
+            );
+          },
+          icon: const Icon(Icons.sort),
+          iconSize: 26,
+        ),
+      ];
+
+  @override
+  Widget? get floatingActionButton => FloatingActionButton(
+        heroTag: null,
+        onPressed: _handleShowAddExtendPage,
+        child: const Icon(
+          Icons.add,
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer(
+      builder: (_, ref, __) {
+        final profilesSelectorState = ref.watch(profilesSelectorStateProvider);
+        if (profilesSelectorState.profiles.isEmpty) {
+          return NullStatus(
+            label: appLocalizations.nullProfileDesc,
+          );
+        }
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 88,
+            ),
+            child: Grid(
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              crossAxisCount: profilesSelectorState.columns,
+              children: [
+                for (int i = 0; i < profilesSelectorState.profiles.length; i++)
+                  GridItem(
+                    child: ProfileItem(
+                      key: Key(profilesSelectorState.profiles[i].id),
+                      profile: profilesSelectorState.profiles[i],
+                      groupValue: profilesSelectorState.currentProfileId,
+                      onChanged: (profileId) {
+                        ref.read(currentProfileIdProvider.notifier).value =
+                            profileId;
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProfilesItem extends StatelessWidget {
+  const _ProfilesItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.open(
+      leading: const Icon(Icons.folder),
+      title: Text(appLocalizations.profiles),
+      delegate: OpenDelegate(
+        title: appLocalizations.profiles,
+        widget: const _ProfilesToolWrapper(),
+      ),
+    );
+  }
+}
+
+class _ConnectionsItem extends StatelessWidget {
+  const _ConnectionsItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.open(
+      leading: const Icon(Icons.ballot),
+      title: Text(appLocalizations.connections),
+      subtitle: Text(appLocalizations.connectionsDesc),
+      delegate: OpenDelegate(
+        title: appLocalizations.connections,
+        widget: const ConnectionsView(),
+      ),
+    );
+  }
+}
+
+class _RequestsItem extends StatelessWidget {
+  const _RequestsItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.open(
+      leading: const Icon(Icons.view_timeline),
+      title: Text(appLocalizations.requests),
+      subtitle: Text(appLocalizations.requestsDesc),
+      delegate: OpenDelegate(
+        title: appLocalizations.requests,
+        widget: const RequestsView(),
+      ),
+    );
+  }
+}
+
 class _DeveloperItem extends StatelessWidget {
   const _DeveloperItem();
 
@@ -317,6 +585,23 @@ class _DeveloperItem extends StatelessWidget {
       delegate: OpenDelegate(
         title: appLocalizations.developerMode,
         widget: const DeveloperView(),
+      ),
+    );
+  }
+}
+
+class _ProxiesItem extends StatelessWidget {
+  const _ProxiesItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListItem.open(
+      leading: const Icon(Icons.article),
+      title: Text(appLocalizations.proxies),
+      subtitle: Text(appLocalizations.proxiesSetting),
+      delegate: OpenDelegate(
+        title: appLocalizations.proxies,
+        widget: const _ProxiesToolWrapper(),
       ),
     );
   }

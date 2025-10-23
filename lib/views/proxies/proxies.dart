@@ -132,70 +132,7 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> with PageMixin {
 
   @override
   void initState() {
-    [
-      if (_hasProviders)
-        IconButton(
-          onPressed: () {
-            showExtend(
-              context,
-              builder: (_, type) {
-                return ProvidersView(
-                  type: type,
-                );
-              },
-            );
-          },
-          icon: const Icon(
-            Icons.poll_outlined,
-          ),
-        ),
-      _isTab
-          ? IconButton(
-              onPressed: () {
-                _proxiesTabKey.currentState?.scrollToGroupSelected();
-              },
-              icon: const Icon(
-                Icons.adjust_outlined,
-              ),
-            )
-          : IconButton(
-              onPressed: () {
-                showExtend(
-                  context,
-                  builder: (_, type) {
-                    return AdaptiveSheetScaffold(
-                      type: type,
-                      body: const _IconConfigView(),
-                      title: appLocalizations.iconConfiguration,
-                    );
-                  },
-                );
-              },
-              icon: const Icon(
-                Icons.style_outlined,
-              ),
-            ),
-      IconButton(
-        onPressed: () {
-          showSheet(
-            context: context,
-            props: SheetProps(
-              isScrollControlled: true,
-            ),
-            builder: (_, type) {
-              return AdaptiveSheetScaffold(
-                type: type,
-                body: const ProxiesSetting(),
-                title: appLocalizations.settings,
-              );
-            },
-          );
-        },
-        icon: const Icon(
-          Icons.tune,
-        ),
-      )
-    ];
+    super.initState();
     ref.listenManual(
       proxiesActionsStateProvider,
       fireImmediately: true,
@@ -217,7 +154,6 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> with PageMixin {
         }
       },
     );
-    super.initState();
   }
 
   @override
@@ -227,6 +163,18 @@ class _ProxiesViewState extends ConsumerState<ProxiesView> with PageMixin {
         (state) => state.type,
       ),
     );
+    // 确保_isTab状态与当前代理类型同步
+    final isTab = proxiesType == ProxiesType.tab;
+    if (_isTab != isTab) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isTab = isTab;
+          });
+          initPageState();
+        }
+      });
+    }
     return switch (proxiesType) {
       ProxiesType.tab => ProxiesTabView(
           key: _proxiesTabKey,

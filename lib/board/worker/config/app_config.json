@@ -1,0 +1,11 @@
+{
+  "configUrl": "https://f005.backblazeb2.com/file/fx2025/app_config.json",
+  "appTitle": "发现新世界",
+  "baseUrl": [
+    "https://ziu-sub.pages.dev",
+    "https://bromochlorodifluoromethane.ziu.ooo",
+    "https://api.ziu.ooo"
+  ],
+  "appUpdateUrl": "https://cloud.ziu.ooo/FxClash",
+  "appUpdateCheckUrl": "https://f005.backblazeb2.com/file/fx2025/app_latest_version.json" 
+} 

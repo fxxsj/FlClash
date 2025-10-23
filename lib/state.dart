@@ -66,7 +66,12 @@ class GlobalState {
 
   initApp(int version) async {
     coreSHA256 = const String.fromEnvironment("CORE_SHA256");
-    isPre = const String.fromEnvironment("APP_ENV") != 'stable';
+    // 修复isPre逻辑：只有明确设置为非stable时才是预发布版本
+    final appEnv = const String.fromEnvironment("APP_ENV", defaultValue: "stable");
+    isPre = appEnv != 'stable';
+    
+    debugPrint('[FlClash] APP_ENV: $appEnv, isPre: $isPre');
+    
     appState = AppState(
       version: version,
       viewSize: Size.zero,

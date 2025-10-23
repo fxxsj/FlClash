@@ -47,10 +47,10 @@ class UaItem extends ConsumerWidget {
         ref.watch(patchClashConfigProvider.select((state) => state.globalUa));
     return ListItem<String?>.options(
       leading: const Icon(Icons.computer_outlined),
-      title: const Text("UA"),
+      title: Text(appLocalizations.ua),
       subtitle: Text(globalUa ?? appLocalizations.defaultText),
       delegate: OptionsDelegate<String?>(
-        title: "UA",
+        title: appLocalizations.ua,
         options: [
           null,
           "clash-verge/v1.6.6",
@@ -212,17 +212,17 @@ class HostsItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListItem.open(
       leading: const Icon(Icons.view_list_outlined),
-      title: const Text("Hosts"),
+      title: Text(appLocalizations.hosts),
       subtitle: Text(appLocalizations.hostsDesc),
       delegate: OpenDelegate(
         blur: false,
-        title: "Hosts",
+        title: appLocalizations.hosts,
         widget: Consumer(
           builder: (_, ref, __) {
             final hosts = ref
                 .watch(patchClashConfigProvider.select((state) => state.hosts));
             return MapInputPage(
-              title: "Hosts",
+              title: appLocalizations.hosts,
               map: hosts,
               titleBuilder: (item) => Text(item.key),
               subtitleBuilder: (item) => Text(item.value),
@@ -250,7 +250,7 @@ class Ipv6Item extends ConsumerWidget {
         ref.watch(patchClashConfigProvider.select((state) => state.ipv6));
     return ListItem.switchItem(
       leading: const Icon(Icons.water_outlined),
-      title: const Text("IPv6"),
+      title: Text(appLocalizations.ipv6),
       subtitle: Text(appLocalizations.ipv6Desc),
       delegate: SwitchDelegate(
         value: ipv6,

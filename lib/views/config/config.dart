@@ -43,11 +43,11 @@ class _ConfigViewState extends State<ConfigView> {
         ),
       ),
       ListItem.open(
-        title: const Text("DNS"),
+        title: Text(appLocalizations.dns),
         subtitle: Text(appLocalizations.dnsDesc),
         leading: const Icon(Icons.dns),
         delegate: OpenDelegate(
-          title: "DNS",
+          title: appLocalizations.dns,
           action: Consumer(builder: (_, ref, __) {
             return IconButton(
               onPressed: () async {

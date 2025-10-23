@@ -5,10 +5,13 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:fl_clash/board/riverpod_setup.dart';
 import 'package:fl_clash/plugins/app.dart';
 import 'package:fl_clash/plugins/tile.dart';
 import 'package:fl_clash/plugins/vpn.dart';
 import 'package:fl_clash/state.dart';
+import 'package:fl_clash/managers/startup_manager.dart';
+import 'package:fl_clash/widgets/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,15 +24,100 @@ import 'models/models.dart';
 Future<void> main() async {
   globalState.isService = false;
   WidgetsFlutterBinding.ensureInitialized();
-  final version = await system.version;
-  await clashCore.preload();
-  await globalState.initApp(version);
-  await android?.init();
-  await window?.init(version);
-  HttpOverrides.global = FlClashHttpOverrides();
-  runApp(ProviderScope(
-    child: const Application(),
-  ));
+  
+  // 启动优化的应用
+  runApp(const OptimizedFlClashApp());
+}
+
+/// 优化的FlClash应用
+class OptimizedFlClashApp extends StatefulWidget {
+  const OptimizedFlClashApp({super.key});
+
+  @override
+  State<OptimizedFlClashApp> createState() => _OptimizedFlClashAppState();
+}
+
+class _OptimizedFlClashAppState extends State<OptimizedFlClashApp> {
+  bool _isInitialized = false;
+  ProviderContainer? _container;
+  
+  @override
+  void initState() {
+    super.initState();
+    _performStartup();
+  }
+
+  Future<void> _performStartup() async {
+    try {
+      await startupManager.performOptimizedStartup();
+      
+      if (mounted) {
+        setState(() {
+          _container = startupManager.container;
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('启动失败: $e');
+      // 即使启动失败也要显示应用，创建一个基础容器
+      try {
+        final fallbackContainer = await _createFallbackContainer();
+        if (mounted) {
+          setState(() {
+            _container = fallbackContainer;
+            _isInitialized = true;
+          });
+        }
+      } catch (fallbackError) {
+        debugPrint('创建备用容器失败: $fallbackError');
+        // 最后的降级方案：创建一个空容器
+        if (mounted) {
+          setState(() {
+            _container = ProviderContainer();
+            _isInitialized = true;
+          });
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized || _container == null) {
+      // 启动阶段：显示启动页面（不需要Riverpod）
+      return MaterialApp(
+        title: 'FlClash',
+        theme: ThemeData(useMaterial3: true),
+        debugShowCheckedModeBanner: false,
+        home: SplashScreen(
+          onInitializationComplete: () {
+            // 启动页面完成回调，但实际切换由状态控制
+          },
+        ),
+      );
+    }
+
+    // 启动完成：显示主应用（包装在ProviderScope中）
+    return UncontrolledProviderScope(
+      container: _container!,
+      child: MaterialApp(
+        title: 'FlClash',
+        theme: ThemeData(useMaterial3: true),
+        debugShowCheckedModeBanner: false,
+        home: const Application(),
+      ),
+    );
+  }
+
+  Future<ProviderContainer> _createFallbackContainer() async {
+    try {
+      return await setupRiverpod();
+    } catch (e) {
+      debugPrint('创建备用容器失败: $e');
+      // 返回一个基础容器
+      return ProviderContainer();
+    }
+  }
 }
 
 @pragma('vm:entry-point')

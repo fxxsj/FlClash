@@ -68,6 +68,7 @@ class CommonScaffoldState extends State<CommonScaffold> {
   final ValueNotifier<Widget?> _floatingActionButton = ValueNotifier(null);
   final ValueNotifier<List<String>> _keywordsNotifier = ValueNotifier([]);
   final ValueNotifier<bool> _loading = ValueNotifier(false);
+  final ValueNotifier<Widget?> _leading = ValueNotifier(null);
 
   final _textController = TextEditingController();
 
@@ -77,6 +78,10 @@ class CommonScaffoldState extends State<CommonScaffold> {
 
   set actions(List<Widget> actions) {
     _appBarState.value = _appBarState.value.copyWith(actions: actions);
+  }
+
+  set leading(Widget? leading) {
+    _leading.value = leading;
   }
 
   bool get _isSearch {
@@ -204,6 +209,7 @@ class CommonScaffoldState extends State<CommonScaffold> {
     _appBarState.dispose();
     _textController.dispose();
     _floatingActionButton.dispose();
+    _leading.dispose();
     super.dispose();
   }
 
@@ -245,12 +251,14 @@ class CommonScaffoldState extends State<CommonScaffold> {
         icon: Icon(Icons.close),
       );
     }
-    return _isSearch
-        ? IconButton(
-            onPressed: _handleExitSearching,
-            icon: Icon(Icons.arrow_back),
-          )
-        : widget.leading;
+    if (_isSearch) {
+      return IconButton(
+        onPressed: _handleExitSearching,
+        icon: Icon(Icons.arrow_back),
+      );
+    }
+    // 优先使用动态设置的 leading，否则使用 widget 的 leading
+    return _leading.value ?? widget.leading;
   }
 
   Widget _buildTitle(AppBarSearchState? startState) {
@@ -358,18 +366,23 @@ class CommonScaffoldState extends State<CommonScaffold> {
                   valueListenable: _appBarState,
                   builder: (_, state, __) {
                     return _buildAppBarWrap(
-                      AppBar(
-                        centerTitle: widget.centerTitle ?? false,
-                        automaticallyImplyLeading:
-                            widget.automaticallyImplyLeading,
-                        leading: _buildLeading(),
-                        title: _buildTitle(state.searchState),
-                        actions: _buildActions(
-                          state.searchState != null,
-                          state.actions.isNotEmpty
-                              ? state.actions
-                              : widget.actions ?? [],
-                        ),
+                      ValueListenableBuilder<Widget?>(
+                        valueListenable: _leading,
+                        builder: (_, leadingValue, __) {
+                          return AppBar(
+                            centerTitle: widget.centerTitle ?? false,
+                            automaticallyImplyLeading:
+                                widget.automaticallyImplyLeading,
+                            leading: _buildLeading(),
+                            title: _buildTitle(state.searchState),
+                            actions: _buildActions(
+                              state.searchState != null,
+                              state.actions.isNotEmpty
+                                  ? state.actions
+                                  : widget.actions ?? [],
+                            ),
+                          );
+                        },
                       ),
                     );
                   },

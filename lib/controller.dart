@@ -28,6 +28,9 @@ class AppController {
   final WidgetRef _ref;
 
   AppController(this.context, WidgetRef ref) : _ref = ref;
+  
+  // 获取当前视图模式
+  ViewMode get viewMode => globalState.appState.viewMode;
 
   setupClashConfigDebounce() {
     debouncer.call(FunctionTag.setupClashConfig, () async {

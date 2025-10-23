@@ -28,24 +28,24 @@ class ResourcesView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const geoItems = <GeoItem>[
+    final geoItems = <GeoItem>[
       GeoItem(
-        label: "GeoIp",
+        label: appLocalizations.geoIp,
         fileName: geoIpFileName,
         key: "geoip",
       ),
       GeoItem(
-        label: "GeoSite",
+        label: appLocalizations.geoSite,
         fileName: geoSiteFileName,
         key: "geosite",
       ),
       GeoItem(
-        label: "MMDB",
+        label: appLocalizations.mmdb,
         fileName: mmdbFileName,
         key: "mmdb",
       ),
       GeoItem(
-        label: "ASN",
+        label: appLocalizations.asn,
         fileName: asnFileName,
         key: "asn",
       ),

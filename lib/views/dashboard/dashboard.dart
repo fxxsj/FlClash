@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:fl_clash/common/common.dart';
@@ -23,6 +24,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> with PageMixin {
   final key = GlobalKey<SuperGridState>();
   final _isEditNotifier = ValueNotifier<bool>(false);
   final _addedWidgetsNotifier = ValueNotifier<List<GridItem>>([]);
+  Timer? _autoSaveTimer; // 自动保存定时器
 
   @override
   initState() {
@@ -41,6 +43,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> with PageMixin {
   @override
   dispose() {
     _isEditNotifier.dispose();
+    _addedWidgetsNotifier.dispose();
+    _autoSaveTimer?.cancel();
     super.dispose();
   }
 
@@ -138,6 +142,26 @@ class _DashboardViewState extends ConsumerState<DashboardView> with PageMixin {
     });
   }
 
+  // 延迟自动保存，避免频繁保存
+  void _scheduleAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(milliseconds: 800), () {
+      if (_isEditNotifier.value) {
+        _handleSave();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(appLocalizations.autoSaved ?? '已自动保存'),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+              width: 200,
+            ),
+          );
+        }
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardStateProvider);
@@ -193,7 +217,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> with PageMixin {
                               ),
                         ],
                         onUpdate: () {
-                          _handleSave();
+                          _scheduleAutoSave(); // 改为调度自动保存
                         },
                       ),
                       onPop: () {
@@ -266,10 +290,34 @@ class _AddedContainer extends StatefulWidget {
   State<_AddedContainer> createState() => _AddedContainerState();
 }
 
-class _AddedContainerState extends State<_AddedContainer> {
+class _AddedContainerState extends State<_AddedContainer>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _elevationAnimation;
+  bool _isHovered = false;
+
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    _elevationAnimation = Tween<double>(
+      begin: 0.0,
+      end: 8.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
   }
 
   @override
@@ -279,41 +327,89 @@ class _AddedContainerState extends State<_AddedContainer> {
   }
 
   _handleAdd() async {
+    // 添加点击动画效果
+    await _animationController.forward();
+    await _animationController.reverse();
     widget.onAdd();
+  }
+
+  void _onHover(bool isHovered) {
+    setState(() {
+      _isHovered = isHovered;
+    });
+    if (isHovered) {
+      _animationController.forward();
+    } else {
+      _animationController.reverse();
+    }
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        ActivateBox(
-          child: widget.child,
-        ),
-        Positioned(
-          top: -8,
-          right: -8,
-          child: DeferPointer(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: IconButton.filled(
-                iconSize: 20,
-                padding: EdgeInsets.all(2),
-                onPressed: _handleAdd,
-                icon: Icon(
-                  Icons.add,
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: MouseRegion(
+            onEnter: (_) => _onHover(true),
+            onExit: (_) => _onHover(false),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      if (_isHovered)
+                        BoxShadow(
+                          color: Theme.of(context).shadowColor.withValues(alpha: 0.3),
+                          blurRadius: _elevationAnimation.value,
+                          offset: Offset(0, _elevationAnimation.value / 2),
+                        ),
+                    ],
+                  ),
+                  child: ActivateBox(
+                    child: widget.child,
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: -8,
+                  right: -8,
+                  child: DeferPointer(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: IconButton.filled(
+                        iconSize: 20,
+                        padding: EdgeInsets.all(2),
+                        onPressed: _handleAdd,
+                        icon: Icon(
+                          Icons.add,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: _isHovered 
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                          foregroundColor: _isHovered 
+                            ? Theme.of(context).colorScheme.onPrimary
+                            : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              ],
             ),
           ),
-        )
-      ],
+        );
+      },
     );
   }
 }

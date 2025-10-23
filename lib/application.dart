@@ -12,6 +12,8 @@ import 'package:fl_clash/state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_clash/board/providers/providers.dart';
+import 'package:fl_clash/board/views/account/auth/index.dart';
 
 import 'controller.dart';
 import 'pages/pages.dart';
@@ -59,22 +61,31 @@ class ApplicationState extends ConsumerState<Application> {
       await globalState.appController.init();
       globalState.appController.initLink();
       app?.initShortcuts();
+      
     });
   }
 
   _autoUpdateGroupTask() {
-    _autoUpdateGroupTaskTimer = Timer(const Duration(milliseconds: 20000), () {
+    // 延迟30秒开始，避免启动时阻塞
+    _autoUpdateGroupTaskTimer = Timer(const Duration(seconds: 30), () {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         globalState.appController.updateGroupsDebounce();
-        _autoUpdateGroupTask();
+        // 后续每20秒执行一次
+        _autoUpdateGroupTaskTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+          globalState.appController.updateGroupsDebounce();
+        });
       });
     });
   }
 
   _autoUpdateProfilesTask() {
-    _autoUpdateProfilesTaskTimer = Timer(const Duration(minutes: 20), () async {
+    // 延迟5分钟开始配置文件自动更新
+    _autoUpdateProfilesTaskTimer = Timer(const Duration(minutes: 5), () async {
       await globalState.appController.autoUpdateProfiles();
-      _autoUpdateProfilesTask();
+      // 后续每20分钟执行一次
+      _autoUpdateProfilesTaskTimer = Timer.periodic(const Duration(minutes: 20), (_) async {
+        await globalState.appController.autoUpdateProfiles();
+      });
     });
   }
 
@@ -179,10 +190,54 @@ class ApplicationState extends ConsumerState<Application> {
                   primaryColor: themeProps.primaryColor,
                 ).toPureBlack(themeProps.pureBlack),
               ),
-              home: child,
+              home: Consumer(
+                builder: (context, ref, _) {
+                  final authState = ref.watch(authStateProvider);
+                  
+                  // 如果未认证，显示全屏登录界面
+                  if (!authState.isAuthenticated) {
+                    return MaterialApp(
+                      debugShowCheckedModeBanner: false,
+                      localizationsDelegates: const [
+                        AppLocalizations.delegate,
+                        GlobalMaterialLocalizations.delegate,
+                        GlobalCupertinoLocalizations.delegate,
+                        GlobalWidgetsLocalizations.delegate
+                      ],
+                      routes: {
+                        '/login': (context) => const LoginPage(),
+                        '/register': (context) => const RegisterPage(),
+                        '/reset_password': (context) => const ResetPasswordPage(),
+                      },
+                      locale: utils.getLocaleForString(locale),
+                      supportedLocales: AppLocalizations.delegate.supportedLocales,
+                      themeMode: themeProps.themeMode,
+                      theme: ThemeData(
+                        useMaterial3: true,
+                        pageTransitionsTheme: _pageTransitionsTheme,
+                        colorScheme: _getAppColorScheme(
+                          brightness: Brightness.light,
+                          primaryColor: themeProps.primaryColor,
+                        ),
+                      ),
+                      darkTheme: ThemeData(
+                        useMaterial3: true,
+                        pageTransitionsTheme: _pageTransitionsTheme,
+                        colorScheme: _getAppColorScheme(
+                          brightness: Brightness.dark,
+                          primaryColor: themeProps.primaryColor,
+                        ).toPureBlack(themeProps.pureBlack),
+                      ),
+                      home: const LoginPage(),
+                    );
+                  }
+                  
+                  // 已认证，显示主应用
+                  return const HomePage();
+                },
+              ),
             );
           },
-          child: const HomePage(),
         ),
       ),
     );
